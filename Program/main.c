@@ -74,11 +74,11 @@ double** get_matrix(int d_matrix, int *width, int *height) {
 	return matrix;
 }
 
-//Применяет матрицу свёртки на конкретной компоненте
+//Применяет матрицу свёртки на конкретной компоненте указанного пикселя
 unsigned char modify(unsigned char* pixel_start, unsigned char* pixel_end,
                      unsigned char* string_left, int pixel_width,
-                     unsigned char* value_ptr, double** matrix, int width,
-					 int height) {
+                     short int cell_length, unsigned char* value_ptr,
+                     double** matrix, int width, int height) {
 	int y_center = height/2; //Позиция центрального элемента по y
 	int x_center = width/2; //Позиция центрального элемента по x
 	int weight_sum = 0; //Сумма всех элементов в массиве свёртки
@@ -86,13 +86,14 @@ unsigned char modify(unsigned char* pixel_start, unsigned char* pixel_end,
 	for (int i = 0; i < height; i++)
 		for (int j = 0; j < width; j++) {
 			unsigned char* new_value_ptr = value_ptr + (j - x_center)*
-                                                           sizeof(struct pixel);
+                                                           cell_length;
 			/*Проверяем искомый пиксель на существование в строке
 			(он должен нахолится в пределах строки)*/
 			if (new_value_ptr >= string_left &&
-				new_value_ptr <= string_left + pixel_width * sizeof(struct pixel)) {
-				new_value_ptr += (i - y_center)*pixel_width*sizeof(struct pixel);
-				/*Проверка на существование адресса файле (аналогично проверке на существование в столбце)*/
+				new_value_ptr <= string_left + pixel_width * cell_length) {
+				new_value_ptr += (i - y_center) * pixel_width * cell_length;
+				/*Проверка на существование адресса файле
+                (аналогично проверке на существование в столбце)*/
 				if (new_value_ptr >= pixel_start && new_value_ptr <= pixel_end) {
 					weight_sum += matrix[i][j];
 					new_value += (*new_value_ptr) * matrix[i][j];
@@ -119,22 +120,26 @@ void antialiasing(int d_input, int d_output, double** matrix, int  m_width, int 
 	//Здесь начинается полноценное чтение файла
 	int width = abs(*((int*)(input_ptr + 18)));
 	int height = abs(*((int*)(input_ptr + 22)));
-	long long pixel_start = *((int*)(input_ptr + 10)); //Относительное начало информации о пикселях
-	long long pixel_end = width*height*sizeof(struct pixel) + pixel_start;
+	//Считывается кол-во бит, выделяемых на пиксель
+	short int cell_length = *(short int*)(input_ptr + 28);
+	cell_length /= 8; //Храним длинну в байтах
+	//Относительное начало информации о пикселях
+	long long pixel_start = *((int*)(input_ptr + 10));
+	long long pixel_end = width * height * cell_length + pixel_start;
 	//Левая и правая граница строки
 	unsigned char* input_pixel_left = input_ptr + pixel_start;
 	unsigned char* input_pixel_start = input_ptr + pixel_start;
 	unsigned char* input_pixel_end = input_ptr + pixel_end;
-	for (long long index = pixel_start; index < pixel_end; index += sizeof(struct pixel)) {
-		if (input_ptr + index >= input_pixel_left + width * sizeof(struct pixel))
-			input_pixel_left += width * sizeof(struct pixel);
+	for (long long index = pixel_start; index < pixel_end; index += cell_length) {
+		if (input_ptr + index >= input_pixel_left + width * cell_length)
+			input_pixel_left += width * cell_length;
 
 		struct pixel new_value =
-        {modify(input_pixel_start, input_pixel_end, input_pixel_left, width,
+        {modify(input_pixel_start, input_pixel_end, input_pixel_left, width, cell_length,
                                   input_ptr + index, matrix, m_width, m_height),
-         modify(input_pixel_start, input_pixel_end, input_pixel_left, width,
+         modify(input_pixel_start, input_pixel_end, input_pixel_left, width, cell_length,
                               input_ptr + index + 1, matrix, m_width, m_height),
-         modify(input_pixel_start, input_pixel_end, input_pixel_left, width,
+         modify(input_pixel_start, input_pixel_end, input_pixel_left, width, cell_length,
                              input_ptr + index + 2, matrix, m_width, m_height)};
 		*((struct pixel*)(output_ptr + index)) = new_value;
 	}
