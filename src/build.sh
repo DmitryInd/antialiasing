@@ -7,4 +7,3 @@ touch ../build/run.sh
 echo "./antialiassing" >> ../build/run.sh
 
 cp -r ./assets ../build/assets
-
