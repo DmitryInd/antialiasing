@@ -150,7 +150,7 @@ void antialiasing(int d_input, int d_output, double** matrix, int  m_width, int 
 
 //Считывание матрицы из файла
 void matrix_mode(int d_input, int d_output) {
-	unsigned char matrix_file_name[4096];
+	char matrix_file_name[4096];
 	printf("%s\n", "Введите путь к матрице свёртки:");
 	scanf("%s", matrix_file_name);
 	int d_matrix = open(matrix_file_name, O_RDONLY);
@@ -194,8 +194,8 @@ void number_mode(int d_input, int d_output) {
 }
 
 int main(int argc, char** argv) {
-	unsigned char input_file_name[4096];
-	unsigned char output_file_name[4106];
+	char input_file_name[4096];
+	char output_file_name[4106];
 	printf("%s\n", "Введите путь к изображению:");
 	scanf("%s", input_file_name);
 	int length = strlen(input_file_name);
