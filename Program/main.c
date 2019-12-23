@@ -193,7 +193,7 @@ void number_mode(int d_input, int d_output) {
 	free(matrix);
 }
 
-int main(int argc, unsigned char** argv) {
+int main(int argc, char** argv) {
 	unsigned char input_file_name[4096];
 	unsigned char output_file_name[4106];
 	printf("%s\n", "Введите путь к изображению:");
